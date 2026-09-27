@@ -1,0 +1,147 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    function dono(uid) {
+      return autenticado() && request.auth.uid == uid;
+    }
+
+    match /nomesEmpresas/{nomeNormalizado} {
+      allow read: if true;
+
+      allow create: if autenticado()
+        && request.resource.data.keys().hasOnly([
+          'uid',
+          'nome'
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.nome is string
+        && request.resource.data.nome.size() > 0
+        && getAfter(
+          /databases/$(database)/documents/empresas/$(request.auth.uid)
+        ).data.nomeNormalizado == nomeNormalizado;
+
+      allow update: if false;
+
+      allow delete: if autenticado()
+        && resource.data.uid == request.auth.uid;
+    }
+
+    match /empresas/{uid} {
+      allow create: if dono(uid)
+        && request.resource.data.keys().hasOnly([
+          'nome',
+          'nomeNormalizado',
+          'criadoEm'
+        ])
+        && request.resource.data.nome is string
+        && request.resource.data.nome.size() > 0
+        && request.resource.data.nomeNormalizado is string
+        && request.resource.data.nomeNormalizado.size() > 0
+        && request.resource.data.criadoEm is timestamp
+        && getAfter(
+          /databases/$(database)/documents/nomesEmpresas/$(request.resource.data.nomeNormalizado)
+        ).data.uid == request.auth.uid;
+
+      allow read: if dono(uid);
+      allow update: if false;
+      allow delete: if dono(uid);
+
+      match /gastos/{gastoId} {
+        allow read: if dono(uid);
+        allow create: if dono(uid)
+          && request.resource.data.keys().hasOnly([
+            'descricao','categoria','quantidade','valorUnitarioCentavos',
+            'valorTotalCentavos','data','observacoes','criadoEm'
+          ])
+          && request.resource.data.descricao is string
+          && request.resource.data.descricao.size() > 0
+          && request.resource.data.categoria in [
+            'Ingredientes','Embalagens','Equipamentos','Divulgação','Transporte','Outros'
+          ]
+          && request.resource.data.quantidade is number
+          && request.resource.data.quantidade >= 0
+          && request.resource.data.valorUnitarioCentavos is number
+          && request.resource.data.valorUnitarioCentavos >= 0
+          && request.resource.data.valorTotalCentavos is number
+          && request.resource.data.valorTotalCentavos >= 0
+          && request.resource.data.valorTotalCentavos == request.resource.data.quantidade * request.resource.data.valorUnitarioCentavos
+          && request.resource.data.data is string
+          && request.resource.data.observacoes is string
+          && request.resource.data.criadoEm is timestamp;
+        allow update: if false;
+        allow delete: if dono(uid);
+      }
+
+      match /estoque/{produtoId} {
+        allow read: if dono(uid);
+        allow create: if dono(uid)
+          && request.resource.data.keys().hasOnly([
+            'produto','produtoNormalizado','quantidade','precoUnitarioCentavos','criadoEm','atualizadoEm'
+          ])
+          && request.resource.data.produto is string
+          && request.resource.data.produto.size() > 0
+          && request.resource.data.produtoNormalizado is string
+          && request.resource.data.produtoNormalizado.size() > 0
+          && request.resource.data.quantidade is number
+          && request.resource.data.quantidade >= 0
+          && request.resource.data.precoUnitarioCentavos is number
+          && request.resource.data.precoUnitarioCentavos >= 0
+          && request.resource.data.criadoEm is timestamp
+          && request.resource.data.atualizadoEm is timestamp;
+        allow update: if dono(uid)
+          && request.resource.data.keys().hasOnly([
+            'produto','produtoNormalizado','quantidade','precoUnitarioCentavos','criadoEm','atualizadoEm'
+          ])
+          && request.resource.data.produto == resource.data.produto
+          && request.resource.data.produtoNormalizado == resource.data.produtoNormalizado
+          && request.resource.data.precoUnitarioCentavos == resource.data.precoUnitarioCentavos
+          && request.resource.data.criadoEm == resource.data.criadoEm
+          && request.resource.data.quantidade is number
+          && request.resource.data.quantidade >= 0
+          && request.resource.data.atualizadoEm is timestamp;
+        allow delete: if dono(uid);
+      }
+
+      match /vendas/{vendaId} {
+        allow read: if dono(uid);
+        allow create: if dono(uid)
+          && request.resource.data.keys().hasOnly([
+            'cliente','produtos','totalCentavos','formaPagamento','valorRecebidoCentavos',
+            'trocoCentavos','data','horarioRegistro','criadoEm'
+          ])
+          && request.resource.data.cliente is string
+          && request.resource.data.cliente.size() > 0
+          && request.resource.data.produtos is list
+          && request.resource.data.produtos.size() > 0
+          && request.resource.data.totalCentavos is number
+          && request.resource.data.totalCentavos >= 0
+          && request.resource.data.formaPagamento in ['Pix','Dinheiro']
+          && request.resource.data.valorRecebidoCentavos is number
+          && request.resource.data.valorRecebidoCentavos >= 0
+          && request.resource.data.trocoCentavos is number
+          && request.resource.data.trocoCentavos >= 0
+          && ((request.resource.data.formaPagamento == 'Pix'
+              && request.resource.data.valorRecebidoCentavos == request.resource.data.totalCentavos
+              && request.resource.data.trocoCentavos == 0)
+            || (request.resource.data.formaPagamento == 'Dinheiro'
+              && request.resource.data.valorRecebidoCentavos >= request.resource.data.totalCentavos
+              && request.resource.data.trocoCentavos == request.resource.data.valorRecebidoCentavos - request.resource.data.totalCentavos))
+          && request.resource.data.data is string
+          && request.resource.data.horarioRegistro is timestamp
+          && request.resource.data.criadoEm is timestamp;
+        allow update: if false;
+        allow delete: if dono(uid);
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sistema de Gestão para empresas de feira escolar" />
+  <title>Sistema de Gestão</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <div id="toast-root" aria-live="polite"></div>
+
+  <main id="auth-screen" class="screen auth-screen">
+    <section class="auth-card">
+      <div class="brand-mark">SG</div>
+      <p class="eyebrow">SISTEMA DE GESTÃO</p>
+      <h1>Controle sua empresa de forma simples.</h1>
+      <p class="auth-subtitle">Gastos, estoque e vendas em um só lugar.</p>
+      <div class="auth-actions">
+        <button class="btn btn-primary btn-large" id="btn-open-create">Criar login</button>
+        <button class="btn btn-secondary btn-large" id="btn-open-login">Logar</button>
+      </div>
+    </section>
+  </main>
+
+  <main id="app-screen" class="app-screen hidden">
+    <header class="topbar">
+      <div class="topbar-title">
+        <span>SISTEMA DE GESTÃO</span>
+        <strong id="company-name-header">Empresa</strong>
+      </div>
+      <button class="profile-button" id="btn-profile" aria-label="Abrir perfil">
+        <span>Perfil</span>
+      </button>
+    </header>
+
+    <nav class="nav-tabs" aria-label="Navegação principal">
+      <button class="nav-tab active" data-page="geral">Geral</button>
+      <button class="nav-tab" data-page="gastos">Gastos</button>
+      <button class="nav-tab" data-page="estoque">Estoque</button>
+      <button class="nav-tab" data-page="vendas">Vendas</button>
+    </nav>
+
+    <section class="page-wrap">
+      <div id="page-geral" class="page"></div>
+      <div id="page-gastos" class="page hidden"></div>
+      <div id="page-estoque" class="page hidden"></div>
+      <div id="page-vendas" class="page hidden"></div>
+    </section>
+  </main>
+
+  <div id="modal-root"></div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
